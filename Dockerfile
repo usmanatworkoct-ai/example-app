@@ -1,18 +1,20 @@
-FROM node:13-alpine
+FROM node
 
-ENV MONGO_DB_USERNAME=admin \
-    MONGO_DB_PWD=password
+# (optional) demo env vars like in Nana's video
+ENV MONGO_INITDB_ROOT_USERNAME=admin \
+    MONGO_INITDB_ROOT_PWD=password
 
+# create application directory inside the container
 RUN mkdir -p /home/app
 
+# copy the Node.js app (the "app" folder from this project)
 COPY ./app /home/app
 
-# set default dir so that next commands executes in /home/app dir
+# set working directory
 WORKDIR /home/app
 
-# will execute npm install in /home/app because of WORKDIR
+# install dependencies
 RUN npm install
 
-# no need for /home/app/server.js because of WORKDIR
+# start the node server
 CMD ["node", "server.js"]
-
