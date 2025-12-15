@@ -22,18 +22,17 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-      - name: Run migrations
-        # If migrations need DB, you must ensure DB is reachable from your server
+      - name: Run migrations (only if Django manage.py exists)
         run: |
-          python manage.py migrate
+          if [ -f manage.py ]; then python manage.py migrate; else echo "No manage.py, skipping migrations"; fi
 
       - name: Build Docker image
         if: github.event_name == 'push'
         run: |
-          docker build -t ${{ secrets.DOCKER_USERNAME }}/app:${{ github.sha }} .
-          docker tag ${{ secrets.DOCKER_USERNAME }}/app:${{ github.sha }} ${{ secrets.DOCKER_USERNAME }}/app:latest
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/my-ci-project:${{ github.sha }} .
+          docker tag ${{ secrets.DOCKER_USERNAME }}/my-ci-project:${{ github.sha }} ${{ secrets.DOCKER_USERNAME }}/my-ci-project:latest
 
       - name: Login DockerHub
         if: github.event_name == 'push'
@@ -43,25 +42,5 @@ jobs:
       - name: Push Docker image
         if: github.event_name == 'push'
         run: |
-          docker push ${{ secrets.DOCKER_USERNAME }}/app:${{ github.sha }}
-          docker push ${{ secrets.DOCKER_USERNAME }}/app:latest
-
-      - name: Notify Slack (via Slack Email App)
-        if: always()
-        uses: dawidd6/action-send-mail@v3
-        with:
-          server_address: ${{ secrets.SMTP_HOST }}
-          server_port: ${{ secrets.SMTP_PORT }}
-          username: ${{ secrets.SMTP_USER }}
-          password: ${{ secrets.SMTP_PASS }}
-          subject: "CI Result: ${{ job.status }} | ${{ github.repository }}"
-          to: "aaaarmmt5lkde2wpndvzmt6k4u@azmdevelopment.slack.com"
-          from: ${{ secrets.SMTP_FROM }}
-          content_type: text/plain
-          body: |
-            Repo: ${{ github.repository }}
-            Branch: ${{ github.ref_name }}
-            Event: ${{ github.event_name }}
-            Status: ${{ job.status }}
-            Commit: ${{ github.sha }}
-            Actor: ${{ github.actor }}
+          docker push ${{ secrets.DOCKER_USERNAME }}/my-ci-project:${{ github.sha }}
+          docker push ${{ secrets.DOCKER_USERNAME }}/my-ci-project:latest
